@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Live Comment Extractor</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --border: #2a2a2a;
+            --accent: #ff0000;
+            --accent-hover: #cc0000;
+            --text: #ffffff;
+            --muted: #aaaaaa;
+            --muted-2: #888888;
+            --success-bg: #0f2a1a;
+            --success-border: #1f6f3a;
+            --success-text: #6ee7a8;
+            --error-bg: #2a1010;
+            --error-border: #7f1d1d;
+            --error-text: #fca5a5;
+            --warn: #fbbf24;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 580px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .subtitle {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .divider {
+            margin: 18px 0;
+            border: none;
+            border-top: 1px solid var(--border);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: #101010;
+            border: 1px solid #333;
+            color: var(--text);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.98rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        .extract-btn {
+            width: 100%;
+            margin-top: 14px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 12px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .extract-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .extract-btn:disabled {
+            background: #7f1d1d;
+            cursor: not-allowed;
+        }
+
+        .progress-wrap {
+            margin-top: 14px;
+            display: none;
+            background: #131313;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: #2c2c2c;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            border-radius: 999px;
+            background: var(--accent);
+            animation: 1.8s ease-in-out infinite progressAnim;
+        }
+
+        @keyframes progressAnim {
+            0%   { width: 5%;   margin-left: 0%;  }
+            50%  { width: 60%;  margin-left: 20%; }
+            100% { width: 5%;   margin-left: 95%; }
+        }
+
+        .progress-text {
+            margin: 10px 0 4px;
+            font-size: 0.94rem;
+        }
+
+        .progress-warn {
+            margin: 0;
+            font-size: 0.86rem;
+            color: var(--warn);
+        }
+
+        .stats-box,
+        .status-box,
+        .howto {
+            margin-top: 14px;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: #131313;
+        }
+
+        .stats-box,
+        .status-box {
+            display: none;
+        }
+
+        .stats-label {
+            color: var(--muted-2);
+            margin-right: 8px;
+        }
+
+        .status-box {
+            white-space: pre-line;
+        }
+
+        .status-success {
+            border-color: var(--success-border);
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .status-error {
+            border-color: var(--error-border);
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+
+        .howto h3 {
+            margin: 0 0 8px;
+            font-size: 1rem;
+        }
+
+        .howto ol {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--muted);
+            line-height: 1.5;
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 420px) {
+            .card { padding: 16px; }
+            h1 { font-size: 1.08rem; }
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <div class="header">
+            <div class="icon-box">▶</div>
+            <div>
+                <h1>YouTube Live Comment Extractor</h1>
+                <p class="subtitle">Extract all available live chat replay comments to Excel (.xlsx)</p>
+            </div>
+        </div>
+
+        <hr class="divider" />
+
+        <label for="urlInput">YouTube Live Stream URL</label>
+        <input
+            id="urlInput"
+            type="text"
+            placeholder="https://www.youtube.com/live/VIDEO_ID"
+            autocomplete="off"
+            spellcheck="false"
+        />
+
+        <button id="extractBtn" class="extract-btn" onclick="extractComments()">⬇ Extract &amp; Download All Comments</button>
+
+        <section id="progressWrap" class="progress-wrap">
+            <div class="progress-track">
+                <div class="progress-bar"></div>
+            </div>
+            <p class="progress-text">⏳ Extracting all comments...</p>
+            <p class="progress-warn">⚠ Do not close this tab</p>
+        </section>
+
+        <section id="statsBox" class="stats-box">
+            <div><span class="stats-label">File:</span><span id="fileNameText">-</span></div>
+            <div><span class="stats-label">Status:</span><span>Download started successfully</span></div>
+        </section>
+
+        <section id="statusBox" class="status-box"></section>
+
+        <section class="howto">
+            <h3>HOW TO USE</h3>
+            <ol>
+                <li>Paste a completed YouTube live stream URL in the input above.</li>
+                <li>Supported formats include <code>watch?v=</code>, <code>/live/</code>, <code>youtu.be</code>, <code>/embed/</code>, and <code>/shorts/</code>.</li>
+                <li>Click <strong>Extract &amp; Download All Comments</strong>.</li>
+                <li>Wait while every available replay comment is collected.</li>
+                <li>Your Excel file will download automatically when complete.</li>
+            </ol>
+        </section>
+    </main>
+
+    <script>
+        const urlInput = document.getElementById("urlInput");
+        const extractBtn = document.getElementById("extractBtn");
+        const progressWrap = document.getElementById("progressWrap");
+        const statsBox = document.getElementById("statsBox");
+        const statusBox = document.getElementById("statusBox");
+        const fileNameText = document.getElementById("fileNameText");
+
+        function showStatus(message, isSuccess) {
+            statusBox.style.display = "block";
+            statusBox.className = "status-box " + (isSuccess ? "status-success" : "status-error");
+            statusBox.textContent = message;
+        }
+
+        function parseFilename(disposition) {
+            if (!disposition) {
+                return "comments.xlsx";
+            }
+
+            const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+            if (utf8Match && utf8Match[1]) {
+                return decodeURIComponent(utf8Match[1].replace(/"/g, ""));
+            }
+
+            const asciiMatch = disposition.match(/filename="?([^";]+)"?/i);
+            if (asciiMatch && asciiMatch[1]) {
+                return asciiMatch[1];
+            }
+
+            return "comments.xlsx";
+        }
+
+        async function extractComments() {
+            const url = urlInput.value.trim();
+            statsBox.style.display = "none";
+            statusBox.style.display = "none";
+
+            if (!url) {
+                showStatus("Please provide a YouTube URL", false);
+                return;
+            }
+
+            const lowered = url.toLowerCase();
+            if (!lowered.includes("youtube.com") && !lowered.includes("youtu.be")) {
+                showStatus("Please enter a valid YouTube URL", false);
+                return;
+            }
+
+            extractBtn.disabled = true;
+            extractBtn.textContent = "⏳ Extracting... Please Wait";
+            progressWrap.style.display = "block";
+
+            try {
+                const response = await fetch("/extract", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url })
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `Request failed: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (_) {
+                        // Keep fallback message when response body is not JSON.
+                    }
+                    showStatus(errorMessage, false);
+                    return;
+                }
+
+                const blob = await response.blob();
+                const disposition = response.headers.get("Content-Disposition");
+                const filename = parseFilename(disposition);
+
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+                fileNameText.textContent = filename;
+                statsBox.style.display = "block";
+                showStatus("✅ Extraction complete. Your Excel file download has started.", true);
+            } catch (error) {
+                showStatus(`Network error while extracting comments.\nDetails: ${error.message}`, false);
+            } finally {
+                extractBtn.disabled = false;
+                extractBtn.textContent = "⬇ Extract & Download All Comments";
+                progressWrap.style.display = "none";
+            }
+        }
+
+        urlInput.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                extractComments();
+            }
+        });
+    </script>
+</body>
+</html>
